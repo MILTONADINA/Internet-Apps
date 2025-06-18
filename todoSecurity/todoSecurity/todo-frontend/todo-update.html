@@ -1,0 +1,196 @@
+<!DOCTYPE html> 
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Todo List Update </title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+  </head>
+  <body>
+
+<script>
+  var id;
+  var authheader;
+  var token = localStorage.getItem("token");
+  if (token != "" && token != null) {
+    authheader = 'Bearer ' + token;
+  } else {
+    authheader = "";
+  }
+
+  getName();
+
+  function urlParam(name) {
+    var results = new RegExp("[\\?&]" + name + "=([^&#]*)").exec(window.location.href);
+    if (results == null) return null;
+    return results[1] || 0;
+  }
+
+  function addItem() {
+    id = urlParam('id');
+    var name = document.getElementById("naming").value;
+    var description = document.getElementById("description").value;
+    var state = "in-progress";
+    var data = JSON.stringify({ name, description, state });
+
+    sendRequest("POST", "/todoapi/lists/" + id + "/items", data, function (response) {
+      if (response.readyState === 4 && response.status === 201) {
+        document.getElementById("page-message").innerHTML = "Record Added";
+        window.location.reload();
+      } else {
+        document.getElementById("page-message").innerHTML = "Error: " + response.statusText;
+      }
+    });
+  }
+
+  function getData() {
+    id = urlParam('id');
+    sendRequest("GET", "/todoapi/lists/" + id + "/items", null, function (response) {
+      if (response.readyState === 4 && response.status === 200) {
+        let items = JSON.parse(response.responseText).items;
+        let output = '<table>';
+        output += '<tr><th>Complete</th><th>Name</th><th>Description</th><th>State</th><th>Action</th></tr>';
+        for (let i = 0; i < items.length; i++) {
+          output += `
+            <tr>
+              <td><input type="checkbox" id="check${items[i].id}" onclick="checkComplete(${items[i].id})"></td>
+              <td><input type="text" id="name${items[i].id}" value="${items[i].name}"></td>
+              <td><input type="text" id="description${items[i].id}" value="${items[i].description}"></td>
+              <td><input type="text" id="state${items[i].id}" value="${items[i].state}"></td>
+              <td>
+                <button onclick="updateItem(${items[i].id})">Save</button>
+                <button class="delete" onclick="deleteItem(${items[i].id})">Delete</button>
+              </td>
+            </tr>`;
+        }
+        output += `<tr>
+          <td></td>
+          <td><input type="text" id="naming"></td>
+          <td><input type="text" id="description"></td>
+          <td></td>
+          <td><button onclick="addItem()">Add</button></td>
+        </tr>`;
+        output += '</table>';
+        document.getElementById("todo-list-table").innerHTML = output;
+
+        for (let i = 0; i < items.length; i++) {
+          if (document.querySelector('#state' + items[i].id).value === "complete") {
+            document.querySelector('#check' + items[i].id).checked = true;
+          }
+        }
+      } else {
+        document.getElementById("page-message").innerHTML = "Error: " + response.statusText;
+      }
+    });
+  }
+
+  function deleteItem(itemId) {
+    sendRequest("DELETE", `/todoapi/lists/${id}/items/${itemId}`, null, function (response) {
+      if (response.readyState === 4 && response.status === 200) {
+        window.location.assign("todo-update.html?id=" + id);
+      } else {
+        document.getElementById("page-message").innerHTML = "Error: " + response.statusText;
+      }
+    });
+  }
+
+  function checkComplete(itemId) {
+    if (document.querySelector('#check' + itemId).checked) {
+      document.querySelector('#state' + itemId).value = "complete";
+    } else {
+      document.querySelector('#state' + itemId).value = "in-progress";
+    }
+  }
+
+  function updateItem(itemId) {
+    id = urlParam('id');
+    var name = document.getElementById('name' + itemId).value;
+    var description = document.getElementById('description' + itemId).value;
+    var state = document.getElementById('state' + itemId).value;
+    const data = { name, description, state };
+
+    sendRequest("PUT", "/todoapi/lists/" + id + "/items/" + itemId, JSON.stringify(data), function (response) {
+      if (response.readyState === 4 && response.status !== 200) {
+        console.log("Error updating item: " + response.statusText);
+      }
+    });
+  }
+
+  function getName() {
+    id = urlParam('id');
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = function () {
+      if (xmlhttp.readyState === 4 && xmlhttp.status === 200) {
+        var data = JSON.parse(this.responseText);
+        document.getElementById('name').value = data.list.name;
+      }
+    };
+    xmlhttp.open("GET", "/todoapi/lists/" + id, true);
+    xmlhttp.withCredentials = true;
+    xmlhttp.setRequestHeader("Authorization", authheader);
+    xmlhttp.send();
+  }
+
+  function updateList() {
+    id = urlParam('id');
+    var name = document.getElementById('name').value;
+    const data = { name }; 
+
+    sendRequest("PUT", "/todoapi/lists/" + id, JSON.stringify(data), function (response) {
+      
+      if (response.readyState === 4) { 
+        if (response.status === 200) {
+          
+          window.location.assign("todo-list.html");
+        } else {
+          
+          console.error("Error updating list: " + response.status + " " + response.statusText);
+          document.getElementById("page-message").innerHTML = "Error updating list: " + response.statusText;
+        }
+      }
+    });
+  }
+
+  function deleteList() {
+    window.location.assign("todo-delete.html?id=" + id);
+  }
+
+  function goToList() {
+    window.location.assign("todo-list.html");
+  }
+
+  function sendRequest(method, url, body, callback) {
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = function () {
+      if (xmlhttp.readyState === 4) {
+        callback(xmlhttp);
+      }
+    };
+    xmlhttp.open(method, url, true);
+    xmlhttp.setRequestHeader("Content-Type", "application/json");
+    xmlhttp.withCredentials = true;
+    xmlhttp.setRequestHeader("Authorization", authheader);
+    xmlhttp.send(body);
+  }
+
+  getData();
+</script>
+
+<center>
+  <h2>Todo list Update</h2>
+  <p><span id="page-message">Enter fields and click Save</span></p>
+  <p><span class="error-head">* required field.</span></p>
+
+  <div class="buttons"></div>
+
+  <label for="name"><span></span>Name:</label>
+  <input type="text" id="name" name="name" required />
+  <button onclick="updateList()">Update</button>
+  <button onclick="deleteList()">Delete</button>
+  <button onclick="goToList()">Lists</button>
+
+  <div class="table-center">
+    <div id="todo-list-table" class="center"></div>
+  </div>
+</center>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Todo Login</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+  </head>
+  <body>
+    <h2>Login</h2>
+    <div class="block-center">
+
+      <script>
+        function submitForm (e)
+        {
+          e.preventDefault();
+          var username=document.getElementById("username").value;
+          var password=document.getElementById("password").value;
+          
+          var xhttp = new XMLHttpRequest();
+          xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200)
+            {
+              var response = JSON.parse(this.responseText);
+              var token = response.token;
+              
+              localStorage.setItem("token", token);
+              
+              window.location.assign("todo-list.html");
+            }
+             
+            else if (this.readyState == 4) {
+                 document.getElementById("page-message").innerHTML = "Login failed. Please check username/password.";
+                 console.error("Login failed: Status " + this.status);
+            }
+          };
+          
+          xhttp.open("POST",  "/todoapi/users/login", true);
+          xhttp.withCredentials = true;
+          
+          xhttp.setRequestHeader("Authorization", "Basic " + btoa(username + ":" + password));
+          xhttp.send();
+        }
+
+        
+
+      </script>
+
+      <p id="debug"></p>
+      <div class="block-center">
+        <p><span id="page-message">Enter fields and click Save</span></p>
+        <p><span class="error-head">* required field.</span></p>
+        <form id="addUserForm" onsubmit="submitForm(event)">
+          UserName: <input type="text" id="username" required /> <br /> <br />
+          Password: <input type="password" id="password" required /> <br /> <br />
+          <Button type="submit">Login</Button>
+          <a href="todo-userAdd.html" target="_blank">Create an account</a>
+        </form>
+      </div>
+
+      </div>
+  </body>
+</html>

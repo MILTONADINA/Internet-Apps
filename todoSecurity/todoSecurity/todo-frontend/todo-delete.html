@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>List Delete</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+  </head>
+  <body>
+    <script>
+
+      var authheader;
+      var token = localStorage.getItem("token");
+      if (token != "" && token != null) {
+       authheader = 'Bearer ' + token ;
+      } else
+      {
+        authheader = "";
+      }
+
+     function urlParam(name) {
+         var results = new RegExp("[\?&]" + name + "=([^&#]*)").exec(
+           window.location.href
+         );
+         if (results == null) {
+           return null;
+         } else {
+           return results[1] || 0;
+         }
+       }
+
+
+       function deleteRecord() {
+         console.log("delete function");
+         document.getElementById("deleteMessage").innerHTML =
+           "Deleting record ... Wait";
+         document.getElementById("deletebtn").setAttribute("disabled", true);
+         var xmlhttp = new XMLHttpRequest();
+         xmlhttp.onreadystatechange = function () {
+           if (xmlhttp.readyState === 4 && xmlhttp.status === 200) {
+             console.log("Delete success ");
+             window.location.assign("todo-list.html");
+           } else if (xmlhttp.readyState === 4) {
+             console.log("Delete error " + this.statusText);
+             console.log("incoming Text " + this.responseText);
+             // Optionally add user feedback for error here
+             document.getElementById("deleteMessage").innerHTML = "Error: Could not delete list.";
+             document.getElementById("deletebtn").removeAttribute("disabled");
+           }
+         };
+         xmlhttp.open("DELETE", "/todoapi/lists/" + urlParam("id"), true);
+          xmlhttp.withCredentials = true;
+         xmlhttp.setRequestHeader("Authorization", authheader);
+         xmlhttp.send();
+       }
+
+       document.onreadystatechange = function () {
+         if (document.readyState === "complete") {
+           var listId = urlParam("id");
+           if (!listId) {
+              document.getElementById("deleteMessage").innerHTML = "Error: No list ID specified.";
+              return;
+           }
+
+           var xmlhttp = new XMLHttpRequest();
+           xmlhttp.onreadystatechange = function () {
+             if (xmlhttp.readyState === 4 && xmlhttp.status === 200) {
+               try {
+                 var response = JSON.parse(this.responseText);
+                 if (response && response.list && response.list.name) {
+                    document.getElementById("deleteMessage").innerHTML =
+                      "Delete record for: " +
+                      response.list.name +
+                      "?";
+                 } else {
+                    console.error("Unexpected response structure:", response);
+                    document.getElementById("deleteMessage").innerHTML = "Error: Could not load list details.";
+                 }
+               } catch (e) {
+                  console.error("Error parsing JSON:", e);
+                  document.getElementById("deleteMessage").innerHTML = "Error: Invalid response from server.";
+               }
+             } else if (xmlhttp.readyState === 4) {
+                  console.error("Error fetching list details: Status " + xmlhttp.status);
+                  document.getElementById("deleteMessage").innerHTML = "Error: Could not load list details.";
+             }
+           };
+           xmlhttp.open("GET", "/todoapi/lists/" + listId, true);
+            xmlhttp.withCredentials = true;
+            xmlhttp.setRequestHeader("Authorization", authheader);
+           xmlhttp.send();
+         }
+       };
+    </script>
+
+    <h2>List Delete</h2>
+    <div class="block-center">
+      <br /><br />
+      <p id="deleteMessage">Loading...</p>
+      <br /><br />
+
+      <input
+        class="inline"
+        id="deletebtn"
+        type="button"
+        value="Delete"
+        onclick="deleteRecord()"
+      />
+
+      <form action="todo-list.html" method="GET" style="display: inline;">
+        <button type="submit">Cancel</button>
+      </form>
+    </div>
+  </body>
+</html>
