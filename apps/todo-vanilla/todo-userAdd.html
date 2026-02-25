@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Todo add User</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+  </head>
+  <body>
+    <script>
+        var token = localStorage.getItem("token");
+            if (token != "" && token != null) {
+            var authheader = 'Bearer ' + token ;
+              } else {
+                    var authheader = "";
+              }
+  
+        function submitForm(e) {
+          e.preventDefault();
+          console.log("submitform function called");
+          var firstName = document.getElementById("firstName").value;
+          console.log("First Name: " + firstName);
+          var lastName = document.getElementById("lastName").value;
+          console.log("Last Name: " + lastName);
+          var userName = document.getElementById("userName").value;
+          console.log("User Name: " + userName);
+          var password = document.getElementById("password").value;
+          console.log("Password: " + password);
+          var data = JSON.stringify({
+            firstName: firstName,
+            lastName: lastName,
+            username: userName,
+            password: password,
+          });
+          console.log("data: " + data);
+  
+          fetch("/todoapi/users", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: data,
+          })
+            .then(function (response) {
+              if (response.ok) {
+                console.log("Post Successful");
+                document.getElementById("page-message").innerHTML = "User Added";
+                window.location.assign("todo-login.html");
+                
+              } else {
+                throw new Error("Error: " + response.statusText);
+              }
+            })
+            .catch(function (error) {
+              console.error(error);
+              document.getElementById("page-message").innerHTML = error.message;
+            });
+        }
+      </script>
+  
+      <h2>Add User</h2>
+      <p id="debug"></p>
+      <div class="block-center">
+        <p><span id="page-message">Enter fields and click Save</span></p>
+        <p><span class="error-head">* required field.</span></p>
+        <form id="addUserForm" onsubmit="submitForm(event)">
+          First Name: <input type="text" id="firstName" required /> <br /> <br />
+          Last Name: <input type="text" id="lastName" required /> <br /> <br />
+          User Name: <input type="text" id="userName" required /> <br /> <br />
+          Password: <input type="password" id="password" required /> <br /> <br />
+  
+
+          <input type="submit" name="submit" value="Save" />
+
+        </form>
+
+        <form action="todo-login.html" method="get">
+          <button type="submit">Cancel</button> 
+        </form>
+
+      </div>
+    </body>
+  </html>
+  

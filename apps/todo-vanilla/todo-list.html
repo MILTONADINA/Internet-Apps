@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Todo List</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+  </head>
+  <body>
+  <center>
+      
+        <h2 class="title">Todo Lists </h2>
+
+        <div class="button-container">
+      
+          <div>
+            <p id = "welcome"></p>
+          </div>
+      
+          <p><span id="page-message"> Click on list name to view or Click Add</span></p>
+      
+            <p id="selectedID"></p>
+              <form class="inline" action="todo-add.html" method="get">
+                  <button type="submit">Add</button>
+                </form>
+
+        <div id="todo-table">
+          <table class="center"id="todo-list-table"></table>
+        </div>
+        
+    </center>
+
+    <script>
+
+      var token = localStorage.getItem("token");
+      var authheader;
+      if (token != "" && token != null) {
+        authheader = 'Bearer ' + token ;
+      } else {
+        authheader = "";
+      }
+
+      var start = 0;
+      var page = 5;
+
+      function escapeHTML(str) {
+        if (!str) return "";
+        return String(str).replace(/[&<>"']/g, function(match) {
+          switch(match) {
+            case '&': return '&amp;';
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '"': return '&quot;';
+            case "'": return '&#39;';
+            default:  return match;
+          }
+        });
+      }
+
+      getUserName();
+      createTable(start);
+
+      function getId() {
+        var lists = document.getElementsByName("selectedRow");
+        var i = lists.length;
+        while (i--) {
+          if (lists[i].checked) return lists[i].value;
+        }
+      }
+
+    function deleteList(id) {
+    console.log("here");
+    window.location.assign("todo-delete.html?id="+id);
+}
+
+      function selectChange(radioButton) {
+        var bt = document.getElementById("btUpdate");
+        if (radioButton.checked) {
+          bt.disabled = false;
+          id = getId();
+          document.getElementById("selectedID").innerHTML = id;
+          document.getElementById("updatedID").value = id;
+          document.getElementById("deleteID").value = id;
+        } else {
+          bt.disabled = true;
+        }
+      }
+    
+
+      function logout() 
+        {
+          var xhttp = new XMLHttpRequest(); 
+          xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) 
+            { 
+              localStorage.removeItem("token");
+              localStorage.removeItem("user_id");
+              window.location.assign("todo-login.html");
+            }
+          };
+          xhttp.open("POST",  "/todoapi/users/logout ", true);
+          xhttp.withCredentials = true; 
+          xhttp.setRequestHeader("Authorization", authheader); 
+          xhttp.send();
+        }
+        function getUserName(){
+          var xhttp = new XMLHttpRequest();
+          xhttp.onreadystatechange = function(){
+            if (this.readyState == 4 && this.status == 200){
+              var data = JSON.parse(this.responseText);
+            var fName = escapeHTML(data.user.firstName);
+            var lName = escapeHTML(data.user.lastName);
+            var output = 'Hi, '+ fName+ " "+lName+ '<a href="todo-login.html" onclick="logout()"> (Logout)</a>';
+              document.getElementById("welcome").innerHTML = output;
+        
+            }
+          }
+          xhttp.open("GET", "/todoapi/users/", true);
+          xhttp.withCredentials = true; 
+          xhttp.setRequestHeader("Authorization", authheader); 
+          xhttp.send();
+        }
+    function createTable(start) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+        if (this.readyState === 4 && this.status === 200) {
+            var myObj = JSON.parse(this.responseText).lists;
+            var tableHTML =
+                '<tr><th width="100px">Todo List</th><th width="100px">Action</th></tr>';
+            for (var i = 0; i < myObj.length; i++) {
+                var list = myObj[i];
+                tableHTML +=
+                    '<tr>'+
+                    '<td><a href="todo-update.html?id='+list.id+'">' + escapeHTML(list.name) + '</a>' 
+                    +'</td>'+
+                    '<td><button class="delete" onclick="window.location.assign(' +'\' todo-delete.html?id='+ list.id+'\')"'+'">Delete</button></td>'
+                    +'</tr>'
+            }
+            tableHTML += "</table>";
+            document.getElementById("todo-list-table").innerHTML = tableHTML;
+        }
+    };
+    xhttp.open("GET", "/todoapi/lists/", true);
+    xhttp.withCredentials = true; 
+    xhttp.setRequestHeader("Authorization", authheader); 
+    xhttp.send();
+}
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Todo Add</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+  </head>
+  <body>
+    <script>
+     var token = localStorage.getItem("token");
+      var authheader;
+      if (token != "" && token != null) {
+        authheader = 'Bearer ' + token ;
+      } else {
+        authheader = "";
+      }
+      getUserName();
+
+      function submitForm(e) {
+        e.preventDefault();
+        var name = document.getElementById("Name").value;
+
+        var data = JSON.stringify({name: name});
+
+        var xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function () {
+          if (this.readyState === 4) {
+            if (this.status === 406) {
+              var message = JSON.parse(this.responseText);
+              var errorElements = document.getElementsByClassName("error");
+              for (var j = 0; j < errorElements.length; j++)
+                errorElements[j].innerHTML = "*";
+              for (var i = 0; i < message.length; i++) {
+                document.getElementById(
+                  message[i].attributeName + "Err"
+                ).innerHTML = message[i].message;
+                console.log(
+                  "Error " + message[i].attributeName + " " + message[i].message
+                );
+              }
+              document.getElementById("page-message").innerHTML =
+                "Fix errors and click Save";
+            }
+
+            else if (this.status === 201) {
+              console.log("Post Succesful");
+              document.getElementById("page-message").innerHTML =
+                "Record Added";
+              window.location.assign("todo-list.html");
+            } else {
+              document.getElementById("page-message").innerHTML =
+                "Error:" + this.statusText;
+              console.log("error " + this.statusText);
+              console.log("incoming Text " + this.responseText);
+            }
+          }
+        };
+        xmlhttp.open("POST", "/todoapi/lists/", true);
+        xmlhttp.withCredentials = true;
+        xmlhttp.setRequestHeader("Authorization", authheader);
+        xmlhttp.setRequestHeader("Content-type", "application/json");
+        xmlhttp.send(data);
+      }
+      function logout()
+        {
+          var xhttp = new XMLHttpRequest();
+          xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200)
+            {
+              localStorage.removeItem("token");
+              localStorage.removeItem("user_id"); 
+              window.location.assign("todo-login.html");
+            }
+          };
+          
+          xhttp.open("POST",  "/todoapi/users/logout", true);
+          xhttp.withCredentials = true;
+          xhttp.setRequestHeader("Authorization", authheader);
+          xhttp.send();
+        }
+
+        function getUserName(){
+          
+          if (!authheader) return;
+
+          var xhttp = new XMLHttpRequest();
+          xhttp.onreadystatechange = function(){
+            if (this.readyState == 4 && this.status == 200){
+              try { 
+                var data = JSON.parse(this.responseText);
+                if (data && data.user) { 
+                  var first = data.user.firstName || ''; 
+                  var last = data.user.lastName || '';
+                  var output = 'Hi, '+ first + " " + last + ' <a href="#" onclick="event.preventDefault(); logout()"> (Logout)</a>';
+                  var welcomeEl = document.getElementById("welcome");
+                  if (welcomeEl) { 
+                     welcomeEl.innerHTML = output;
+                  } else {
+                     console.error("Element with id 'welcome' not found.");
+                  }
+                } else {
+                   console.error("Unexpected response structure from /users:", data);
+                }
+              } catch (e) {
+                 console.error("Error parsing user data:", e);
+              }
+            } else if (this.readyState == 4) {
+               
+               console.error("Error fetching user data: Status " + this.status);
+               
+            }
+          }
+          
+          xhttp.open("GET",  "/todoapi/users/", true);
+          xhttp.withCredentials = true;
+          xhttp.setRequestHeader("Authorization", authheader);
+          xhttp.send();
+        }
+    </script>
+
+<h2>List Add</h2>
+<p id="welcome"></p> <p id="debug"></p>
+<div class="block-center">
+  <p><span id="page-message">Enter fields and click Save</span></p>
+  <p><span class="error-head">* required field.</span></p>
+  <form id="todoForm" onsubmit="submitForm(event)">
+
+  Name: <input type="text" id="Name" />
+        <span id="NameErr" class="error">*</span>
+          <input type="submit" name="submit" value="Save" />
+
+  </form>
+  <form action="todo-list.html" method="get" style="display: inline;">
+    <button type="submit">Cancel</button>
+  </form>
+</div>
+</body>
+</html>

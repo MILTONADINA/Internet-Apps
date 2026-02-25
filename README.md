@@ -1,6 +1,6 @@
 # Internet Applications Portfolio – Full Stack JavaScript Projects
 
-This repository presents two full-stack projects built using modern JavaScript frameworks and backend technologies. The projects demonstrate frontend-to-backend integration, user authentication, RESTful APIs, and component-based design using Vue.js and vanilla JavaScript.
+This repository presents two full-stack projects built using modern JavaScript frameworks and backend technologies. Following a professional codebase audit, it has been restructured into an **NPM Workspaces Monorepo**. This structure eliminates code duplication by serving both independent frontends from a single unified API package.
 
 ---
 
@@ -8,84 +8,73 @@ This repository presents two full-stack projects built using modern JavaScript f
 
 - **Frontend Development:** HTML, CSS, JavaScript, Vue.js 3, DOM manipulation
 - **Backend Development:** Node.js, Express, MySQL, REST APIs, secure session management
-- **Security:** Bcrypt password hashing, JWT authentication, API routing protection
-- **Architecture:** Clear separation of concerns between backend services and frontend UI
-- **Deployment-Ready:** Modular code structure suitable for cloud or EC2 deployment
+- **Security:** Bcrypt password hashing, JWT authentication, Stored XSS mitigation, secure CORS configurations
+- **Architecture:** NPM Workspaces Monorepo, clear separation of concerns, DRY principles
+- **Deployment-Ready:** `dotenv` secret management, decoupled DB migrations, explicit API rate-limiting expectations
 
 ---
 
-## 📁 Project Overview
+## 📁 Project Overview (Monorepo)
 
-### 1. `todoSecurity/`
-A secure, session-based To-Do App with user authentication and persistent MySQL backend.
+The project utilizes NPM Workspaces to manage dependencies and scripts from the root.
 
-**Structure:**
-todoSecurity/
-├── todo-backend-dev/ → Node.js backend (Express, MySQL, JWT)
-├── todo-frontend/ → HTML/CSS/JavaScript frontend (vanilla)
+```text
+/
+├── packages/
+│   └── api/             → Node.js unified backend (Express, MySQL, JWT)
+├── apps/
+│   ├── todo-vanilla/    → Vanilla HTML/CSS/JavaScript frontend
+│   └── todo-vue/        → Vue 3 SPA frontend (Vite, Vuex, Vue Router)
+├── package.json         → Root workspace script orchestrator
+```
 
+### Features:
 
-**Features:**
 - 🔐 Login/signup with hashed password storage (bcrypt)
-- ✅ Session tokens and protected API routes
-- 🗂 To-do lists with CRUD functionality
-- 🖥 Deployed on local and AWS EC2 for live testing
-
----
-
-### 2. `todoVue/`
-A modern, component-based To-Do App built with Vue 3 and RESTful backend.
-
-**Structure:**
-todoVue/
-├── todo-frontend-vue3/ → Vue 3 SPA using Vite, custom components, event handling
-├── todo-backend-dev/ → Node.js REST API backend with Express & MySQL
-
-
-
-
-**Features:**
-- ⚙️ Responsive Vue interface with routing and reactivity
-- 🧠 Stateless token-based authentication
-- 📦 Package-managed with `npm` and `vite`
-- 🧪 Separated development and production environments
-
----
-
-## 🧱 Technologies Used
-
-| Frontend | Backend  | Database | Security |
-|----------|----------|----------|----------|
-| HTML5, CSS3, JS | Node.js (Express) | MySQL | bcrypt, JWT |
-| Vue.js 3 | REST APIs | Sequelize ORM | Session & token-based auth |
+- ✅ Session tokens and protected API routes across both frontends
+- 🗂 To-do lists with CRUD functionality and multi-tenant scoping
+- ⚙️ Dynamic UI updates using both classic DOM rendering and modern reactive frameworks
 
 ---
 
 ## 🚀 How to Run Locally
 
-### For `todoSecurity/`
+### 1. Root Database Configuration
 
-**Backend:**
-bash
-cd todoSecurity/todoSecurity/todo-backend-dev
+Rename the existing `.env.example` file in the API layer or create one to establish your database settings.
+
+1. `cp packages/api/.env.example packages/api/.env`
+2. Update the `DB_PASSWORD` to your local MySQL server.
+3. Keep `DB_AUTO_INIT=true` for your first run to scaffold the database.
+
+### 2. Install Dependencies Entirely
+
+Run the installation command from the root of the project to initialize all workspaces simultaneously:
+
+```bash
 npm install
-node server.js
+```
 
-Frontend
-cd todoSecurity/todoSecurity/todo-frontend
-Open index.html in browser
+### 3. Start the Unified Backend API
 
+Start the backend server on port 3001:
 
-**For todoVue/**
-Backend:
-cd todoVue/todo-backend-dev
-npm install
-node server.js
+```bash
+npm run dev:backend
+```
 
-Frontend
-cd todoVue/todo-frontend-vue3
-npm install
-npm run dev
+_(Optionally run `npm run db:init` specifically if you disabled auto-init in your env)._
 
+### 4. Run the Frontends
 
+**To run the Vanilla App:**
+Simply open `apps/todo-vanilla/todo-login.html` directly in your browser or run a lightweight web server like LiveServer on it.
 
+**To run the Vue 3 App:**
+Open a new terminal window and start the Vite dev server at the workspace root:
+
+```bash
+npm run dev:frontend
+```
+
+This will start the Vue development UI and proxy API requests automatically to the backend on `localhost:3001`.
